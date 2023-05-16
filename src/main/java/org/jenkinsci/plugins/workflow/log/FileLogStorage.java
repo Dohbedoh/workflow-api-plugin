@@ -86,7 +86,7 @@ public final class FileLogStorage implements LogStorage {
     private synchronized void open() throws IOException {
         if (os == null) {
             os = new FileOutputStream(log, true);
-            bos = new GCFlushedOutputStream(new DelayBufferedOutputStream(os));
+            bos = new GCFlushedOutputStream(new DelayBufferedOutputStream(new Jenkins56446FilterOutputStream(os)));
             if (index.isFile()) {
                 try (BufferedReader r = Files.newBufferedReader(index.toPath(), StandardCharsets.UTF_8)) {
                     // TODO would be faster to scan the file backwards for the penultimate \n, then convert the byte sequence from there to EOF to UTF-8 and set lastId accordingly
@@ -333,4 +333,25 @@ public final class FileLogStorage implements LogStorage {
         return log;
     }
 
+    static class Jenkins56446FilterOutputStream extends FilterOutputStream {
+
+        /**
+         * Creates an output stream filter built on top of the specified
+         * underlying output stream.
+         *
+         * @param out the underlying output stream to be assigned to
+         *            the field {@code this.out} for later use, or
+         *            <code>null</code> if this instance is to be
+         *            created without an underlying stream.
+         */
+        public Jenkins56446FilterOutputStream(OutputStream out) {
+            super(out);
+        }
+
+        @Override
+        public void close() throws IOException {
+            LOGGER.log(Level.FINE, "Closing stream", new Throwable("JENKINS-56446"));
+            super.close();
+        }
+    }
 }
